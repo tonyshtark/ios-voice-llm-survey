@@ -1,0 +1,135 @@
+{
+  "questionnaire": {
+    "title": "Location/Street Assessment Survey",
+    "description": "Please evaluate the facilities and overall impressions of your location or street.",
+    "questions": [
+      {
+        "id": 1,
+        "question": "Are there places to sit?",
+        "type": "yes-no",
+        "keywords": ["seats", "benches", "rest", "sit", "chairs", "sitting areas"]
+      },
+      {
+        "id": 2,
+        "question": "Are there shade trees?",
+        "type": "yes-no",
+        "keywords": ["trees", "shade", "shaded", "green", "plants", "foliage"]
+      },
+      {
+        "id": 3,
+        "question": "Is there grass, flowers and landscaping?",
+        "type": "yes-no",
+        "follow_up": "How is the maintenance?",
+        "keywords": ["grass", "flowers", "landscaping", "greenery", "garden", "plants"]
+      },
+      {
+        "id": 4,
+        "question": "Are there awnings, outdoor umbrellas or other shelter from rain and weather?",
+        "type": "yes-no",
+        "keywords": ["awnings", "umbrellas", "shelter", "cover", "protection", "weather"]
+      },
+      {
+        "id": 5,
+        "question": "Are there drinking fountains?",
+        "type": "yes-no",
+        "follow_up": "Are they working and clean?",
+        "keywords": ["drinking fountains", "water", "fountains", "water supply"]
+      },
+      {
+        "id": 6,
+        "question": "Are there public restrooms?",
+        "type": "yes-no",
+        "follow_up": "Are they clean and safe?",
+        "keywords": ["restrooms", "bathrooms", "toilets", "facilities", "public facilities"]
+      },
+      {
+        "id": 7,
+        "question": "Is there a transit or bus shelter?",
+        "type": "yes-no",
+        "follow_up": "Is there seating?",
+        "keywords": ["transit", "bus shelter", "bus stop", "station", "transportation"]
+      },
+      {
+        "id": 8,
+        "question": "Are there trash receptacles?",
+        "type": "yes-no",
+        "follow_up": "Are they emptied regularly?",
+        "keywords": ["trash", "receptacles", "bins", "waste", "garbage"]
+      },
+      {
+        "id": 9,
+        "question": "Are buildings and/or homes well-maintained?",
+        "type": "yes-no",
+        "keywords": ["buildings", "homes", "maintenance", "condition", "appearance", "well-kept"]
+      },
+      {
+        "id": 10,
+        "question": "Is there informative signage?",
+        "type": "yes-no",
+        "keywords": ["signage", "signs", "information", "directions", "labels"]
+      },
+      {
+        "id": 11,
+        "question": "Is signage well-placed?",
+        "type": "yes-no",
+        "keywords": ["signage", "placement", "location", "position", "well-positioned"]
+      },
+      {
+        "id": 12,
+        "question": "Are streetscape features (art, signage, etc.) representative of/suitable for the community?",
+        "type": "yes-no",
+        "keywords": ["streetscape", "art", "features", "community", "representative", "suitable"]
+      },
+      {
+        "id": 13,
+        "question": "Is there pedestrian-scaled lighting?",
+        "type": "yes-no",
+        "keywords": ["lighting", "lights", "pedestrian", "appropriate", "brightness", "illumination"]
+      },
+      {
+        "id": 14,
+        "question": "Is there a posted speed limit that seems suitable?",
+        "type": "yes-no",
+        "follow_up": "Do drivers obey the limit?",
+        "keywords": ["speed limit", "speed", "signs", "traffic", "safety", "posted"]
+      },
+      {
+        "id": 15,
+        "question": "Is the location/street a safe and appealing destination?",
+        "type": "impression",
+        "keywords": ["safe", "appealing", "destination", "location", "environment", "attractive"]
+      },
+      {
+        "id": 16,
+        "question": "Is the location/street a safe and appealing travel route?",
+        "type": "impression",
+        "keywords": ["safe", "appealing", "route", "travel", "passage", "way"]
+      },
+      {
+        "id": 17,
+        "question": "Does the location/street appear safe for users of all ages, abilities, races, income levels, etc.?",
+        "type": "impression",
+        "keywords": ["safe", "ages", "abilities", "races", "income", "inclusive", "accessible"]
+      },
+      {
+        "id": 18,
+        "question": "Does the location/street appear safe for pedestrians during both day and night?",
+        "type": "impression",
+        "keywords": ["safe", "pedestrians", "day", "night", "time", "lighting"]
+      },
+      {
+        "id": 19,
+        "question": "Do pedestrians appear safe from moving vehicles?",
+        "type": "impression",
+        "keywords": ["pedestrians", "vehicles", "safe", "traffic", "protection"]
+      },
+      {
+        "id": 20,
+        "question": "Do pedestrians appear safe from crime, harassment or similar threats?",
+        "type": "impression",
+        "keywords": ["pedestrians", "crime", "harassment", "threats", "safety", "security"]
+      }
+    ]
+  }
+}
+

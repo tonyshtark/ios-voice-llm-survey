@@ -2,7 +2,7 @@
 //  CounterAppUITests.swift
 //  CounterAppUITests
 //
-//  Created by 李焰堃 on 10/20/25.
+//  Created by Liyankun Li on 10/20/25.
 //
 
 import XCTest
