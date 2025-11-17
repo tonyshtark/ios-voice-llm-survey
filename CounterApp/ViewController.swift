@@ -37,6 +37,15 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
         // Set title
         title = "Voice Recognition"
         
+        // Add settings button to navigation bar
+        let settingsButton = UIBarButtonItem(
+            image: UIImage(systemName: "gearshape"),
+            style: .plain,
+            target: self,
+            action: #selector(settingsButtonTapped)
+        )
+        navigationItem.rightBarButtonItem = settingsButton
+        
         // Request microphone permission
         requestMicrophonePermission()
         
@@ -46,6 +55,9 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
         statusLabel.textAlignment = .center
         statusLabel.textColor = .systemGray
         statusLabel.numberOfLines = 0
+        
+        // Check API key status
+        checkAPIKeyStatus()
         
         // Setup record button
         setupButton(recordButton, title: "Start Recording", backgroundColor: .systemRed)
@@ -680,6 +692,65 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
         ])
         
         alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    // MARK: - Settings & API Key Management
+    @objc private func settingsButtonTapped() {
+        showAPIKeySettings()
+    }
+    
+    private func checkAPIKeyStatus() {
+        if !LLMService.shared.hasAPIKey() {
+            statusLabel.text = "⚠️ Please configure OpenAI API key in Settings"
+            statusLabel.textColor = .systemOrange
+        }
+    }
+    
+    private func showAPIKeySettings() {
+        let alert = UIAlertController(
+            title: "OpenAI API Key Settings",
+            message: "Enter your OpenAI API key. You can get one from:\nhttps://platform.openai.com/api-keys",
+            preferredStyle: .alert
+        )
+        
+        // Get current API key status
+        let hasExistingKey = LLMService.shared.hasAPIKey()
+        
+        alert.addTextField { textField in
+            if hasExistingKey {
+                textField.placeholder = "API key is configured (enter new key to update)"
+            } else {
+                textField.placeholder = "Enter your OpenAI API key"
+            }
+            textField.isSecureTextEntry = true
+            textField.autocapitalizationType = .none
+            textField.autocorrectionType = .no
+        }
+        
+        alert.addAction(UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+            guard let textField = alert.textFields?.first,
+                  let apiKey = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !apiKey.isEmpty else {
+                self?.showMessage("API key cannot be empty")
+                return
+            }
+            
+            LLMService.shared.setAPIKey(apiKey)
+            self?.checkAPIKeyStatus()
+            self?.showMessage("API key saved successfully")
+        })
+        
+        if hasExistingKey {
+            alert.addAction(UIAlertAction(title: "Clear", style: .destructive) { [weak self] _ in
+                LLMService.shared.setAPIKey("")
+                self?.checkAPIKeyStatus()
+                self?.showMessage("API key cleared")
+            })
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
         present(alert, animated: true)
     }
 }

@@ -3,12 +3,25 @@ import Foundation
 class LLMService {
     static let shared = LLMService()
     
-    // TODO: Replace with your OpenAI API key
-    // Get your API key from: https://platform.openai.com/api-keys
-    private let apiKey = ""
     private let baseURL = "https://api.openai.com/v1"
+    private let apiKeyUserDefaultsKey = "OpenAI_API_Key"
     
     private init() {}
+    
+    // Get API key from UserDefaults
+    private var apiKey: String {
+        return UserDefaults.standard.string(forKey: apiKeyUserDefaultsKey) ?? ""
+    }
+    
+    // Method to set API key
+    func setAPIKey(_ key: String) {
+        UserDefaults.standard.set(key, forKey: apiKeyUserDefaultsKey)
+    }
+    
+    // Method to check if API key is configured
+    func hasAPIKey() -> Bool {
+        return !apiKey.isEmpty
+    }
     
     func generateSystemPrompt(questions: [Question]) -> String {
         var questionsText = ""
@@ -87,11 +100,11 @@ class LLMService {
     
     func analyzeTranscription(_ transcription: String, questions: [Question]) async throws -> [MatchedQuestion] {
         // Check if API key is set
-        guard apiKey != "YOUR_OPENAI_API_KEY_HERE" && !apiKey.isEmpty else {
+        guard !apiKey.isEmpty else {
             throw NSError(
                 domain: "LLMService",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "OpenAI API key not configured. Please set your API key in LLMService.swift\n\nGet your API key from: https://platform.openai.com/api-keys"]
+                userInfo: [NSLocalizedDescriptionKey: "OpenAI API key not configured. Please set your API key in Settings.\n\nGet your API key from: https://platform.openai.com/api-keys"]
             )
         }
         

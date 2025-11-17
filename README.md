@@ -8,6 +8,7 @@ This Swift-based iOS application assists field researchers in collecting qualita
 - ✅ **Immediate Playback** – Review the captured audio without leaving the app
 - ✅ **Speech-to-Text** – Convert recordings to text using Apple’s Speech framework
 - ✅ **LLM Matching** – Send transcripts to the OpenAI API and align answers with questionnaire items
+- ✅ **API Key Management** – Configure OpenAI API key through in-app settings (no code modification required)
 - ✅ **JSON Export** – Save structured results for reporting or sharing
 - ✅ **On-Device Aggregation** – Summarize previously exported survey data into human-readable stats
 
@@ -37,9 +38,13 @@ CounterApp/
 1. Open `CounterApp.xcodeproj` in Xcode.
 2. Select a target device (simulator or physical device).
 3. Confirm that `questionnaire.json` is included in the main bundle.
-4. Provide your OpenAI API key in `LLMService.swift` (see `API_SETUP.md` for details).  
-   > ⚠️ Update the `apiKey` constant in `CounterApp/CounterApp/LLMService.swift` with your own OpenAI API key before running the app.
-5. Build and run with **⌘ + R**.
+4. Build and run with **⌘ + R**.
+5. **Configure OpenAI API Key**:
+   - After launching the app, tap the **Settings** button (⚙️) in the top-right corner of the navigation bar
+   - Enter your OpenAI API key in the settings dialog
+   - You can get your API key from: https://platform.openai.com/api-keys
+   - The API key will be securely stored and persist across app launches
+   - ⚠️ **Important**: You must configure the API key before using the LLM Recognition feature
 
 ## Key Concepts Covered
 
@@ -49,6 +54,7 @@ CounterApp/
 - **Networking** – Calling OpenAI’s REST API with `URLSession`
 - **JSON Handling** – Decoding and encoding structured survey data
 - **File Management** – Writing export files to the app’s documents directory
+- **User Preferences** – Storing API keys securely using UserDefaults
 
 ## Suggested Extensions
 

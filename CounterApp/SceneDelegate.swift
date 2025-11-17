@@ -15,8 +15,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let viewController = storyboard.instantiateInitialViewController()
         
+        // Wrap in navigation controller to show navigation bar with settings button
+        let navigationController = UINavigationController(rootViewController: viewController!)
+        
         // Assign the root view controller
-        window?.rootViewController = viewController
+        window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
     }
 
