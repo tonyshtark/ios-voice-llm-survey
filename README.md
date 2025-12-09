@@ -193,19 +193,6 @@ This application covers the following core iOS development technologies:
   - `Speech` - Speech recognition
   - `Foundation` - Basic functionality (JSON, file management, etc.)
 
-## Suggested Extensions
-
-Want to take the project further? Consider the following directions:
-
-1. **Offline Transcription Support** – Use on-device speech recognition to reduce network dependency
-2. **Multi-language Support** – Provide localized questionnaires and interfaces
-3. **Data Visualization** – Visualize aggregated statistics using chart libraries (e.g., Charts)
-4. **Cloud Storage Sync** – Sync exported data to iCloud or other cloud storage services
-5. **Authentication** – Add user login functionality to protect sensitive survey data
-6. **Batch Export** – Support exporting multiple survey results at once
-7. **Data Search** – Add search functionality to easily find specific survey records
-8. **Export Formats** – Support exporting to other formats like CSV, PDF, etc.
-
 ## Contributing
 
 Welcome to submit Issues and Pull Requests to improve this project!
