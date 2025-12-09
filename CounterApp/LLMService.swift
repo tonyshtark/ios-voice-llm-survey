@@ -1,26 +1,83 @@
 import Foundation
 
+enum APIProvider: String, CaseIterable {
+    case openai = "OpenAI"
+    case gemini = "Gemini"
+    
+    var displayName: String {
+        switch self {
+        case .openai:
+            return "OpenAI"
+        case .gemini:
+            return "Gemini"
+        }
+    }
+}
+
 class LLMService {
     static let shared = LLMService()
     
-    private let baseURL = "https://api.openai.com/v1"
-    private let apiKeyUserDefaultsKey = "OpenAI_API_Key"
+    private let openaiBaseURL = "https://api.openai.com/v1"
+    private let geminiBaseURL = "https://generativelanguage.googleapis.com/v1beta"
+    
+    private let apiProviderUserDefaultsKey = "LLM_API_Provider"
+    private let openaiAPIKeyUserDefaultsKey = "OpenAI_API_Key"
+    private let geminiAPIKeyUserDefaultsKey = "Gemini_API_Key"
     
     private init() {}
     
-    // Get API key from UserDefaults
+    // Get current API provider
+    var currentProvider: APIProvider {
+        if let providerString = UserDefaults.standard.string(forKey: apiProviderUserDefaultsKey),
+           let provider = APIProvider(rawValue: providerString) {
+            return provider
+        }
+        return .openai // Default to OpenAI
+    }
+    
+    // Set API provider
+    func setAPIProvider(_ provider: APIProvider) {
+        UserDefaults.standard.set(provider.rawValue, forKey: apiProviderUserDefaultsKey)
+    }
+    
+    // Get API key from UserDefaults based on current provider
     private var apiKey: String {
-        return UserDefaults.standard.string(forKey: apiKeyUserDefaultsKey) ?? ""
+        switch currentProvider {
+        case .openai:
+            return UserDefaults.standard.string(forKey: openaiAPIKeyUserDefaultsKey) ?? ""
+        case .gemini:
+            return UserDefaults.standard.string(forKey: geminiAPIKeyUserDefaultsKey) ?? ""
+        }
     }
     
-    // Method to set API key
-    func setAPIKey(_ key: String) {
-        UserDefaults.standard.set(key, forKey: apiKeyUserDefaultsKey)
+    // Method to set API key for specific provider
+    func setAPIKey(_ key: String, for provider: APIProvider) {
+        switch provider {
+        case .openai:
+            UserDefaults.standard.set(key, forKey: openaiAPIKeyUserDefaultsKey)
+        case .gemini:
+            UserDefaults.standard.set(key, forKey: geminiAPIKeyUserDefaultsKey)
+        }
     }
     
-    // Method to check if API key is configured
+    // Get API key for specific provider
+    func getAPIKey(for provider: APIProvider) -> String {
+        switch provider {
+        case .openai:
+            return UserDefaults.standard.string(forKey: openaiAPIKeyUserDefaultsKey) ?? ""
+        case .gemini:
+            return UserDefaults.standard.string(forKey: geminiAPIKeyUserDefaultsKey) ?? ""
+        }
+    }
+    
+    // Method to check if API key is configured for current provider
     func hasAPIKey() -> Bool {
         return !apiKey.isEmpty
+    }
+    
+    // Method to check if API key is configured for specific provider
+    func hasAPIKey(for provider: APIProvider) -> Bool {
+        return !getAPIKey(for: provider).isEmpty
     }
     
     func generateSystemPrompt(questions: [Question]) -> String {
@@ -101,18 +158,31 @@ class LLMService {
     func analyzeTranscription(_ transcription: String, questions: [Question]) async throws -> [MatchedQuestion] {
         // Check if API key is set
         guard !apiKey.isEmpty else {
+            let providerName = currentProvider == .openai ? "OpenAI" : "Gemini"
+            let apiKeyURL = currentProvider == .openai ? "https://platform.openai.com/api-keys" : "https://makersuite.google.com/app/apikey"
             throw NSError(
                 domain: "LLMService",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "OpenAI API key not configured. Please set your API key in Settings.\n\nGet your API key from: https://platform.openai.com/api-keys"]
+                userInfo: [NSLocalizedDescriptionKey: "\(providerName) API key not configured. Please set your API key in Settings.\n\nGet your API key from: \(apiKeyURL)"]
             )
         }
         
+        // Call appropriate API based on current provider
+        switch currentProvider {
+        case .openai:
+            return try await analyzeWithOpenAI(transcription: transcription, questions: questions)
+        case .gemini:
+            return try await analyzeWithGemini(transcription: transcription, questions: questions)
+        }
+    }
+    
+    // MARK: - OpenAI Implementation
+    private func analyzeWithOpenAI(transcription: String, questions: [Question]) async throws -> [MatchedQuestion] {
         let systemPrompt = generateSystemPrompt(questions: questions)
         let userMessage = "User's spoken response: \(transcription)\n\nPlease analyze and match this response. Output only valid JSON array."
         
         // OpenAI API endpoint
-        let url = URL(string: "\(baseURL)/chat/completions")!
+        let url = URL(string: "\(openaiBaseURL)/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -120,9 +190,8 @@ class LLMService {
         request.timeoutInterval = 60.0
         
         // OpenAI API request body
-        // Note: We don't use response_format: json_object because we need an array, not an object
         let requestBody: [String: Any] = [
-            "model": "gpt-4o-mini",  // Using gpt-4o-mini for cost efficiency, can change to "gpt-4o" for better quality
+            "model": "gpt-4o-mini",
             "messages": [
                 [
                     "role": "system",
@@ -147,14 +216,12 @@ class LLMService {
             
             let responseString = String(data: data, encoding: .utf8) ?? ""
             
-            // Log response for debugging
             print("OpenAI API Response Status: \(httpResponse.statusCode)")
             if httpResponse.statusCode != 200 {
                 print("OpenAI API Error Response: \(responseString)")
             }
             
             guard httpResponse.statusCode == 200 else {
-                // Parse error response
                 if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let error = errorJson["error"] as? [String: Any],
                    let errorMessage = error["message"] as? String {
@@ -171,7 +238,6 @@ class LLMService {
                 )
             }
             
-            // Parse OpenAI response
             guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let choices = json["choices"] as? [[String: Any]],
                   let firstChoice = choices.first,
@@ -184,59 +250,9 @@ class LLMService {
                 )
             }
             
-            // Extract JSON from response
-            var jsonString = content
-            // Remove markdown code blocks if present
-            jsonString = jsonString.replacingOccurrences(of: "```json", with: "")
-            jsonString = jsonString.replacingOccurrences(of: "```", with: "")
-            jsonString = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // Try to extract JSON array from the response
-            // Look for the first [ and matching ]
-            if let startIndex = jsonString.firstIndex(of: "["),
-               let endIndex = jsonString.lastIndex(of: "]") {
-                jsonString = String(jsonString[startIndex...endIndex])
-            }
-            
-            // Try parsing as direct JSON array
-            if let jsonData = jsonString.data(using: .utf8) {
-                do {
-                    // First try: Parse as array directly
-                    if let array = try JSONSerialization.jsonObject(with: jsonData) as? [[String: Any]] {
-                        let decoder = JSONDecoder()
-                        let arrayData = try JSONSerialization.data(withJSONObject: array)
-                        return try decoder.decode([MatchedQuestion].self, from: arrayData)
-                    }
-                    
-                    // Second try: Parse as object with "results" key
-                    if let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-                       let results = jsonObject["results"] as? [[String: Any]] {
-                        let decoder = JSONDecoder()
-                        let resultsData = try JSONSerialization.data(withJSONObject: results)
-                        return try decoder.decode([MatchedQuestion].self, from: resultsData)
-                    }
-                    
-                    // Third try: Parse as object with "data" key
-                    if let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-                       let data = jsonObject["data"] as? [[String: Any]] {
-                        let decoder = JSONDecoder()
-                        let dataData = try JSONSerialization.data(withJSONObject: data)
-                        return try decoder.decode([MatchedQuestion].self, from: dataData)
-                    }
-                } catch {
-                    // If parsing fails, try with more lenient extraction
-                    print("JSON parsing error: \(error)")
-                }
-            }
-            
-            throw NSError(
-                domain: "LLMService",
-                code: -4,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to parse JSON array from response.\n\nRaw content preview: \(content.prefix(500))\n\nPlease ensure the AI returns a valid JSON array format."]
-            )
+            return try parseJSONResponse(content: content)
             
         } catch let error as NSError {
-            // Re-throw NSError as-is
             throw error
         } catch {
             throw NSError(
@@ -245,6 +261,151 @@ class LLMService {
                 userInfo: [NSLocalizedDescriptionKey: "Network error: \(error.localizedDescription)"]
             )
         }
+    }
+    
+    // MARK: - Gemini Implementation
+    private func analyzeWithGemini(transcription: String, questions: [Question]) async throws -> [MatchedQuestion] {
+        let systemPrompt = generateSystemPrompt(questions: questions)
+        let userMessage = "User's spoken response: \(transcription)\n\nPlease analyze and match this response. Output only valid JSON array."
+        
+        // Gemini API endpoint - using gemini-2.0-flash-exp model
+        let apiKey = self.apiKey
+        let url = URL(string: "\(geminiBaseURL)/models/gemini-2.0-flash-exp:generateContent?key=\(apiKey)")!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60.0
+        
+        // Gemini API request body
+        let requestBody: [String: Any] = [
+            "contents": [
+                [
+                    "parts": [
+                        [
+                            "text": "\(systemPrompt)\n\n\(userMessage)"
+                        ]
+                    ]
+                ]
+            ],
+            "generationConfig": [
+                "temperature": 0.3,
+                "topK": 40,
+                "topP": 0.95,
+                "maxOutputTokens": 2048
+            ]
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NSError(domain: "LLMService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid HTTP response"])
+            }
+            
+            let responseString = String(data: data, encoding: .utf8) ?? ""
+            
+            print("Gemini API Response Status: \(httpResponse.statusCode)")
+            if httpResponse.statusCode != 200 {
+                print("Gemini API Error Response: \(responseString)")
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let error = errorJson["error"] as? [String: Any],
+                   let errorMessage = error["message"] as? String {
+                    throw NSError(
+                        domain: "LLMService",
+                        code: httpResponse.statusCode,
+                        userInfo: [NSLocalizedDescriptionKey: "Gemini API Error: \(errorMessage)"]
+                    )
+                }
+                throw NSError(
+                    domain: "LLMService",
+                    code: httpResponse.statusCode,
+                    userInfo: [NSLocalizedDescriptionKey: "Gemini API returned error: HTTP \(httpResponse.statusCode)\n\(responseString.prefix(300))"]
+                )
+            }
+            
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let candidates = json["candidates"] as? [[String: Any]],
+                  let firstCandidate = candidates.first,
+                  let content = firstCandidate["content"] as? [String: Any],
+                  let parts = content["parts"] as? [[String: Any]],
+                  let firstPart = parts.first,
+                  let text = firstPart["text"] as? String else {
+                throw NSError(
+                    domain: "LLMService",
+                    code: -3,
+                    userInfo: [NSLocalizedDescriptionKey: "Failed to parse Gemini response"]
+                )
+            }
+            
+            return try parseJSONResponse(content: text)
+            
+        } catch let error as NSError {
+            throw error
+        } catch {
+            throw NSError(
+                domain: "LLMService",
+                code: -5,
+                userInfo: [NSLocalizedDescriptionKey: "Network error: \(error.localizedDescription)"]
+            )
+        }
+    }
+    
+    // MARK: - JSON Response Parsing
+    private func parseJSONResponse(content: String) throws -> [MatchedQuestion] {
+        // Extract JSON from response
+        var jsonString = content
+        // Remove markdown code blocks if present
+        jsonString = jsonString.replacingOccurrences(of: "```json", with: "")
+        jsonString = jsonString.replacingOccurrences(of: "```", with: "")
+        jsonString = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Try to extract JSON array from the response
+        if let startIndex = jsonString.firstIndex(of: "["),
+           let endIndex = jsonString.lastIndex(of: "]") {
+            jsonString = String(jsonString[startIndex...endIndex])
+        }
+        
+        // Try parsing as direct JSON array
+        if let jsonData = jsonString.data(using: .utf8) {
+            do {
+                // First try: Parse as array directly
+                if let array = try JSONSerialization.jsonObject(with: jsonData) as? [[String: Any]] {
+                    let decoder = JSONDecoder()
+                    let arrayData = try JSONSerialization.data(withJSONObject: array)
+                    return try decoder.decode([MatchedQuestion].self, from: arrayData)
+                }
+                
+                // Second try: Parse as object with "results" key
+                if let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+                   let results = jsonObject["results"] as? [[String: Any]] {
+                    let decoder = JSONDecoder()
+                    let resultsData = try JSONSerialization.data(withJSONObject: results)
+                    return try decoder.decode([MatchedQuestion].self, from: resultsData)
+                }
+                
+                // Third try: Parse as object with "data" key
+                if let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+                   let data = jsonObject["data"] as? [[String: Any]] {
+                    let decoder = JSONDecoder()
+                    let dataData = try JSONSerialization.data(withJSONObject: data)
+                    return try decoder.decode([MatchedQuestion].self, from: dataData)
+                }
+            } catch {
+                print("JSON parsing error: \(error)")
+            }
+        }
+        
+        throw NSError(
+            domain: "LLMService",
+            code: -4,
+            userInfo: [NSLocalizedDescriptionKey: "Failed to parse JSON array from response.\n\nRaw content preview: \(content.prefix(500))\n\nPlease ensure the AI returns a valid JSON array format."]
+        )
     }
 }
 

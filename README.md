@@ -7,8 +7,9 @@ A Swift-based iOS application that helps field researchers collect qualitative f
 - ✅ **Audio Capture** – Start and stop recording with a single tap
 - ✅ **Immediate Playback** – Review the captured audio without leaving the app
 - ✅ **Speech-to-Text** – Convert recordings to text using Apple's Speech framework
-- ✅ **LLM Matching** – Send transcripts to the OpenAI API and align answers with questionnaire items
-- ✅ **API Key Management** – Configure OpenAI API key through in-app settings (no code modification required)
+- ✅ **LLM Matching** – Send transcripts to LLM API (OpenAI or Gemini) and align answers with questionnaire items
+- ✅ **Multi-API Support** – Choose between OpenAI and Gemini API providers (OpenAI recommended for better results)
+- ✅ **API Key Management** – Configure API keys for both providers through in-app settings (no code modification required)
 - ✅ **JSON Export** – Save structured results for reporting or sharing
 - ✅ **On-Device Aggregation** – Summarize previously exported survey data into human-readable stats
 - ✅ **Questionnaire Browsing** – View the complete questionnaire question list within the app
@@ -47,7 +48,10 @@ CounterApp/
 - **Xcode 15.0 or later** – For development and building the app
 - **iOS 17.0 or later** – Supports simulator or physical device
 - **Swift 5.0 or later** – Programming language version requirement
-- **OpenAI API Key** – For LLM functionality (can be configured in-app)
+- **LLM API Key** – OpenAI or Gemini API key for LLM functionality (can be configured in-app)
+  - **OpenAI API Key** (Recommended) – Get from: https://platform.openai.com/api-keys
+  - **Gemini API Key** (Alternative) – Get from: https://makersuite.google.com/app/apikey
+  - **Note**: OpenAI generally provides better results for this use case, but Gemini is also supported
 
 ### Running the App
 
@@ -78,12 +82,17 @@ CounterApp/
    - The first run may take a few minutes as dependencies are downloaded and compiled
    - If you encounter signing issues, configure your developer account in Signing & Capabilities
 
-6. **Configure OpenAI API Key**
+6. **Configure LLM API Key**
    - After launching the app, tap the **Settings** button (⚙️) in the top-right corner of the navigation bar
-   - Enter your OpenAI API key in the settings dialog
-   - Get your API key from: https://platform.openai.com/api-keys
-   - The API key will be securely stored in UserDefaults and persist across app launches
-   - ⚠️ **Important**: You must configure the API key before using the LLM Recognition feature
+   - **Select API Provider**: Choose between OpenAI or Gemini
+     - **OpenAI** (Recommended) – Generally provides better accuracy and results for questionnaire matching
+     - **Gemini** (Alternative) – Supported as an alternative option
+   - **Configure API Keys**: Enter API keys for your chosen provider(s)
+     - OpenAI API key: Get from https://platform.openai.com/api-keys
+     - Gemini API key: Get from https://makersuite.google.com/app/apikey
+   - The API keys will be securely stored in UserDefaults and persist across app launches
+   - ⚠️ **Important**: You must configure at least one API key before using the LLM Recognition feature
+   - **Note**: You can configure both API keys and switch between providers at any time in settings
 
 7. **Permission Settings**
    - When using the recording feature for the first time, the app will request microphone permission
@@ -110,8 +119,9 @@ CounterApp/
 
 4. **LLM Matching**
    - Tap the "LLM Recognition" button
-   - The app will send the transcription text to the OpenAI API
+   - The app will send the transcription text to the selected LLM API (OpenAI or Gemini)
    - Returns matched questionnaire questions and extracted answers
+   - **Note**: OpenAI is recommended for better accuracy, but you can switch to Gemini in settings if preferred
 
 5. **View Questionnaire**
    - Tap the document icon (📄) in the navigation bar to view the complete questionnaire
@@ -137,7 +147,7 @@ This application covers the following core iOS development technologies:
 - **UIKit Fundamentals** – View controllers, storyboards, and Auto Layout
 - **Audio APIs** – Recording and playback using `AVFoundation`
 - **Speech Recognition** – Converting audio files to text via the `Speech` framework
-- **Networking** – Calling OpenAI's REST API using `URLSession`
+- **Networking** – Calling LLM REST APIs (OpenAI and Gemini) using `URLSession`
 - **JSON Handling** – Decoding and encoding structured survey data using the `Codable` protocol
 - **File Management** – Writing export files to the app's documents directory using `FileManager`
 - **User Preferences** – Securely storing API keys and app settings using `UserDefaults`
@@ -165,11 +175,14 @@ This application covers the following core iOS development technologies:
 - Try restarting the app
 
 **Q: LLM API call failed?**
-- Confirm that the OpenAI API key is properly configured
+- Confirm that the API key for the selected provider (OpenAI or Gemini) is properly configured
 - Check if network connection is normal
 - Verify that the API key is valid and has sufficient quota
 - Check error messages in Xcode console
-- Ensure the API key format is correct (starts with `sk-`)
+- For OpenAI: Ensure the API key format is correct (starts with `sk-`)
+- For Gemini: Ensure the API key format is correct
+- Try switching to the other API provider in settings if one is not working
+- **Note**: OpenAI generally provides more reliable results, so consider using OpenAI if you encounter issues with Gemini
 
 **Q: Unable to export JSON files?**
 - Check if the app has file system access permissions

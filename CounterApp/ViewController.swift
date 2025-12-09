@@ -601,13 +601,11 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
                             let normalizedAnswer = answer.lowercased()
                             let answerType: String
                             
-                            if normalizedAnswer.contains("yes") || normalizedAnswer.contains("是") || 
-                               normalizedAnswer.contains("有") || normalizedAnswer.contains("存在") ||
+                            if normalizedAnswer.contains("yes") || 
                                normalizedAnswer.contains("good") || normalizedAnswer.contains("safe") ||
                                normalizedAnswer.contains("well") || normalizedAnswer.contains("appealing") {
                                 answerType = "yes"
-                            } else if normalizedAnswer.contains("no") || normalizedAnswer.contains("否") || 
-                                      normalizedAnswer.contains("没有") || normalizedAnswer.contains("不存在") ||
+                            } else if normalizedAnswer.contains("no") || 
                                       normalizedAnswer.contains("unsafe") || normalizedAnswer.contains("poor") ||
                                       normalizedAnswer.contains("unappealing") {
                                 answerType = "no"
@@ -1077,27 +1075,95 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
     }
     
     private func checkAPIKeyStatus() {
+        let currentProvider = LLMService.shared.currentProvider
         if !LLMService.shared.hasAPIKey() {
-            statusLabel.text = "⚠️ Please configure OpenAI API key in Settings"
+            let providerName = currentProvider == .openai ? "OpenAI" : "Gemini"
+            statusLabel.text = "⚠️ Please configure \(providerName) API key in Settings"
             statusLabel.textColor = .systemOrange
         }
     }
     
     private func showAPIKeySettings() {
         let alert = UIAlertController(
-            title: "OpenAI API Key Settings",
-            message: "Enter your OpenAI API key. You can get one from:\nhttps://platform.openai.com/api-keys",
+            title: "LLM API Settings",
+            message: "Select API provider and configure API Key\n\nCurrent selection: \(LLMService.shared.currentProvider.displayName)",
+            preferredStyle: .alert
+        )
+        
+        // Add API provider selection
+        alert.addAction(UIAlertAction(title: "Select API Provider", style: .default) { [weak self] _ in
+            self?.showAPIProviderSelection()
+        })
+        
+        // Add OpenAI API key configuration
+        alert.addAction(UIAlertAction(title: "Configure OpenAI API Key", style: .default) { [weak self] _ in
+            self?.showAPIKeyInput(for: .openai)
+        })
+        
+        // Add Gemini API key configuration
+        alert.addAction(UIAlertAction(title: "Configure Gemini API Key", style: .default) { [weak self] _ in
+            self?.showAPIKeyInput(for: .gemini)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showAPIProviderSelection() {
+        let alert = UIAlertController(
+            title: "Select API Provider",
+            message: "Choose the LLM API provider to use",
+            preferredStyle: .actionSheet
+        )
+        
+        let currentProvider = LLMService.shared.currentProvider
+        
+        for provider in APIProvider.allCases {
+            let title = provider == currentProvider ? "\(provider.displayName) ✓" : provider.displayName
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                LLMService.shared.setAPIProvider(provider)
+                self?.checkAPIKeyStatus()
+                self?.showMessage("Switched to \(provider.rawValue)")
+            })
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // iPad support
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    private func showAPIKeyInput(for provider: APIProvider) {
+        let providerName = provider == .openai ? "OpenAI" : "Gemini"
+        let apiKeyURL = provider == .openai ? "https://platform.openai.com/api-keys" : "https://makersuite.google.com/app/apikey"
+        
+        let alert = UIAlertController(
+            title: "\(providerName) API Key Settings",
+            message: "Enter your \(providerName) API Key\n\nGet your API key from: \(apiKeyURL)",
             preferredStyle: .alert
         )
         
         // Get current API key status
-        let hasExistingKey = LLMService.shared.hasAPIKey()
+        let hasExistingKey = LLMService.shared.hasAPIKey(for: provider)
+        let currentKey = LLMService.shared.getAPIKey(for: provider)
         
         alert.addTextField { textField in
             if hasExistingKey {
                 textField.placeholder = "API key is configured (enter new key to update)"
+                // Show masked version of existing key
+                if !currentKey.isEmpty {
+                    let maskedKey = String(currentKey.prefix(8)) + "..." + String(currentKey.suffix(4))
+                    textField.text = maskedKey
+                }
             } else {
-                textField.placeholder = "Enter your OpenAI API key"
+                textField.placeholder = "Enter your \(providerName) API Key"
             }
             textField.isSecureTextEntry = true
             textField.autocapitalizationType = .none
@@ -1112,16 +1178,25 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
                 return
             }
             
-            LLMService.shared.setAPIKey(apiKey)
+            // If the input is the masked key, don't update
+            if hasExistingKey && !currentKey.isEmpty {
+                let maskedKey = String(currentKey.prefix(8)) + "..." + String(currentKey.suffix(4))
+                if apiKey == maskedKey {
+                    self?.showMessage("API key unchanged")
+                    return
+                }
+            }
+            
+            LLMService.shared.setAPIKey(apiKey, for: provider)
             self?.checkAPIKeyStatus()
-            self?.showMessage("API key saved successfully")
+            self?.showMessage("\(providerName) API key saved successfully")
         })
         
         if hasExistingKey {
             alert.addAction(UIAlertAction(title: "Clear", style: .destructive) { [weak self] _ in
-                LLMService.shared.setAPIKey("")
+                LLMService.shared.setAPIKey("", for: provider)
                 self?.checkAPIKeyStatus()
-                self?.showMessage("API key cleared")
+                self?.showMessage("\(providerName) API key cleared")
             })
         }
         
@@ -1226,4 +1301,5 @@ class ViewController: UIViewController, AVAudioPlayerDelegate {
         }
     }
 }
+
 

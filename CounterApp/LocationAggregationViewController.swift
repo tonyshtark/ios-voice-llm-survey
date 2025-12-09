@@ -104,13 +104,11 @@ class LocationAggregationViewController: UIViewController {
                 let normalizedAnswer = answer.lowercased()
                 let answerType: String
                 
-                if normalizedAnswer.contains("yes") || normalizedAnswer.contains("是") ||
-                   normalizedAnswer.contains("有") || normalizedAnswer.contains("存在") ||
+                if normalizedAnswer.contains("yes") ||
                    normalizedAnswer.contains("good") || normalizedAnswer.contains("safe") ||
                    normalizedAnswer.contains("well") || normalizedAnswer.contains("appealing") {
                     answerType = "yes"
-                } else if normalizedAnswer.contains("no") || normalizedAnswer.contains("否") ||
-                          normalizedAnswer.contains("没有") || normalizedAnswer.contains("不存在") ||
+                } else if normalizedAnswer.contains("no") ||
                           normalizedAnswer.contains("unsafe") || normalizedAnswer.contains("poor") ||
                           normalizedAnswer.contains("unappealing") {
                     answerType = "no"
